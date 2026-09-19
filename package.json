@@ -1,0 +1,19 @@
+{
+  "name": "workforce-intelligence-interview",
+  "version": "1.0.0",
+  "description": "Workforce Intelligence & Appraisal Health - HRBP Leadership Interview Case Study Interactive Dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "hrbp",
+    "interview",
+    "workforce-intelligence",
+    "case-study",
+    "dashboard"
+  ],
+  "author": "",
+  "license": "ISC"
+}
