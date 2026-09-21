@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
 
+export const dynamic = 'force-dynamic';
+
 const GRADE_VALUES: Record<string, number> = {
   A: 1, // Awareness
   B: 2, // Working

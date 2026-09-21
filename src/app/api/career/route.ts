@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { DEFAULT_PAY_BANDS } from '@/lib/compensation';
 
+export const dynamic = 'force-dynamic';
+
 const CAREER_LEVELS = [
   {
     level: "L1",

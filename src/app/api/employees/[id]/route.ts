@@ -3,6 +3,8 @@ import prisma from '@/lib/prisma';
 import { calculateCompaRatio, DEFAULT_PAY_BANDS } from '@/lib/compensation';
 import { logAudit } from '@/lib/audit';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
