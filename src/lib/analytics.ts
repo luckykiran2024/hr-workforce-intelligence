@@ -170,8 +170,13 @@ export function calculateDemographics(employees: EmployeeRecord[], scope: string
     modeBreakdown,
     locationBreakdown,
     ageBands,
-    tenureBands,
-    levelDistribution
+    levelDistribution,
+    byLevel: ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7', 'L8'].map(l => ({
+      level: l,
+      total: levelDistribution[l]?.total || 0,
+      female: levelDistribution[l]?.female || 0,
+      male: levelDistribution[l]?.male || 0
+    }))
   };
 }
 

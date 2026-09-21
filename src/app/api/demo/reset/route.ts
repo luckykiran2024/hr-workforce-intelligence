@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { resetToBaseline } from '@/lib/dataProvider';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST() {
   try {
-    console.log('🔄 Triggering Database Reset to baseline employees...');
-    await execAsync('npx tsx prisma/seed.ts', { cwd: process.cwd() });
+    console.log('🔄 Triggering Platform Reset to baseline employees...');
+    resetToBaseline();
     return NextResponse.json({
       success: true,
-      message: 'Platform successfully reset to initial baseline.'
+      message: 'Platform successfully reset to initial baseline with all 288 employees.'
     });
   } catch (error: any) {
     console.error('Error during demo reset:', error);

@@ -27,10 +27,28 @@ export default function WorkforceIntelligence({
   onOpenEmployeeProfile,
   onSelectNineBoxCategory
 }: WorkforceIntelligenceProps) {
-  if (loading || !data) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-sky-600"></div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[300px] p-8 bg-white border border-slate-200 rounded-2xl text-center shadow-sm">
+        <AlertTriangle className="w-10 h-10 text-amber-500 mb-3" />
+        <h3 className="text-base font-bold text-slate-900">Workforce Intelligence Initializing</h3>
+        <p className="text-xs text-slate-500 max-w-md mt-1 mb-4">
+          Connecting to workforce analytics. If this takes longer than expected, click below to refresh.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm"
+        >
+          Refresh Dashboard
+        </button>
       </div>
     );
   }

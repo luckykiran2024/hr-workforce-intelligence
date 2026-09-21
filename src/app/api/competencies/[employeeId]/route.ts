@@ -17,38 +17,64 @@ export async function GET(
   { params }: { params: { employeeId: string } }
 ) {
   try {
-    const employee = await prisma.employee.findUnique({
-      where: { id: params.employeeId },
-      select: {
-        id: true,
-        name: true,
-        careerLevel: true,
-        careerTrack: true,
-        jobTitle: true,
-        teamId: true,
-        annualFixedPay: true,
-        reportingManagerId: true,
-        coachId: true
-      }
-    });
+    let employee: any = null;
+    try {
+      employee = await prisma.employee.findUnique({
+        where: { id: params.employeeId },
+        select: {
+          id: true,
+          name: true,
+          careerLevel: true,
+          careerTrack: true,
+          jobTitle: true,
+          teamId: true,
+          annualFixedPay: true,
+          reportingManagerId: true,
+          coachId: true
+        }
+      });
+    } catch (e) {
+      console.warn('Prisma findUnique failed, falling back to dataProvider:', e);
+    }
+
+    if (!employee) {
+      const { getEmployeeById } = await import('@/lib/dataProvider');
+      employee = await getEmployeeById(params.employeeId);
+    }
 
     if (!employee) {
       return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 404 });
     }
 
-    const allCompetencies = await prisma.competencyDefinition.findMany({
-      orderBy: { id: 'asc' }
-    });
+    let allCompetencies: any[] = [];
+    let assessments: any[] = [];
+    let developmentPlans: any[] = [];
 
-    const [assessments, developmentPlans] = await Promise.all([
-      prisma.employeeCompetency.findMany({
-        where: { employeeId: params.employeeId }
-      }),
-      prisma.developmentPlan.findMany({
-        where: { employeeId: params.employeeId },
-        orderBy: [{ priority: 'asc' }, { createdAt: 'desc' }]
-      })
-    ]);
+    try {
+      [allCompetencies, assessments, developmentPlans] = await Promise.all([
+        prisma.competencyDefinition.findMany({ orderBy: { id: 'asc' } }),
+        prisma.employeeCompetency.findMany({ where: { employeeId: params.employeeId } }),
+        prisma.developmentPlan.findMany({
+          where: { employeeId: params.employeeId },
+          orderBy: [{ priority: 'asc' }, { createdAt: 'desc' }]
+        })
+      ]);
+    } catch (e) {
+      console.warn('Prisma competencies query failed, using defaults:', e);
+    }
+
+    if (allCompetencies.length === 0) {
+      allCompetencies = [
+        { id: "COMP-SQL", name: "SQL and Data Modelling", category: "Technical Foundation", targetKnowledgeL3: "C", targetSkillsL3: "C", targetKnowledgeL4: "D", targetSkillsL4: "D" },
+        { id: "COMP-ETL", name: "ETL/ELT Pipeline Engineering", category: "Data Processing", targetKnowledgeL3: "C", targetSkillsL3: "C", targetKnowledgeL4: "D", targetSkillsL4: "D" },
+        { id: "COMP-PYTHON", name: "Python and Distributed Processing", category: "Core Engineering", targetKnowledgeL3: "C", targetSkillsL3: "C", targetKnowledgeL4: "D", targetSkillsL4: "D" },
+        { id: "COMP-ARCH", name: "Data Architecture and System Design", category: "Architecture & Systems", targetKnowledgeL3: "C", targetSkillsL3: "B", targetKnowledgeL4: "D", targetSkillsL4: "C" },
+        { id: "COMP-CLOUD", name: "Cloud Infrastructure and DevOps", category: "Infrastructure & Security", targetKnowledgeL3: "C", targetSkillsL3: "B", targetKnowledgeL4: "D", targetSkillsL4: "C" },
+        { id: "COMP-GOV", name: "Data Governance and Quality", category: "Quality & Governance", targetKnowledgeL3: "C", targetSkillsL3: "C", targetKnowledgeL4: "D", targetSkillsL4: "D" },
+        { id: "COMP-BIZ", name: "Business Acumen and Stakeholder Impact", category: "Strategic & Business", targetKnowledgeL3: "C", targetSkillsL3: "C", targetKnowledgeL4: "D", targetSkillsL4: "D" },
+        { id: "COMP-LEAD", name: "Engineering Leadership and Mentorship", category: "Leadership & People", targetKnowledgeL3: "B", targetSkillsL3: "B", targetKnowledgeL4: "D", targetSkillsL4: "C" }
+      ];
+    }
 
     const assessmentMap = new Map(assessments.map(a => [a.competencyId, a]));
 

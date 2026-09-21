@@ -76,19 +76,86 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const [total, employees] = await Promise.all([
-      prisma.employee.count({ where }),
-      prisma.employee.findMany({
-        where,
-        include: {
-          team: true,
-          jobCode: true
-        },
-        orderBy: { id: 'asc' },
-        skip: (page - 1) * limit,
-        take: limit
-      })
-    ]);
+    let total = 0;
+    let employees: any[] = [];
+
+    try {
+      [total, employees] = await Promise.all([
+        prisma.employee.count({ where }),
+        prisma.employee.findMany({
+          where,
+          include: {
+            team: true,
+            jobCode: true
+          },
+          orderBy: { id: 'asc' },
+          skip: (page - 1) * limit,
+          take: limit
+        })
+      ]);
+    } catch (e) {
+      console.warn('Prisma query failed, falling back to dataProvider:', e);
+    }
+
+    if (total === 0 || employees.length === 0) {
+      const { getAllEmployees } = await import('@/lib/dataProvider');
+      const all = await getAllEmployees();
+      let filtered = all;
+
+      if (query) {
+        const q = query.toLowerCase();
+        filtered = filtered.filter(e =>
+          e.name.toLowerCase().includes(q) ||
+          e.id.toLowerCase().includes(q) ||
+          e.jobTitle.toLowerCase().includes(q)
+        );
+      }
+      if (team !== 'all') {
+        filtered = filtered.filter(e => e.teamId === team);
+      }
+      if (level !== 'all') {
+        filtered = filtered.filter(e => e.careerLevel === level);
+      }
+      if (talent === 'topTalent') {
+        filtered = filtered.filter(e => e.topTalent);
+      } else if (talent === 'criticalRole') {
+        filtered = filtered.filter(e => e.criticalRole);
+      } else if (talent === 'hipo') {
+        filtered = filtered.filter(e => (e.currentRating || 0) >= 4 && ((e.potential || e.competence || 0) >= 4));
+      }
+
+      if (nineBox !== 'all') {
+        const nb = nineBox.toLowerCase();
+        filtered = filtered.filter(e => {
+          const r = e.currentRating || 3;
+          const c = e.potential || e.competence || 3;
+          let rb = 'med';
+          if (r >= 4) rb = 'high';
+          else if (r <= 2) rb = 'low';
+          let cb = 'med';
+          if (c >= 4) cb = 'high';
+          else if (c <= 2) cb = 'low';
+          const key = `${rb}-${cb}`;
+          if (nb === 'enigma' || nb === 'low-high') return key === 'low-high';
+          if (nb === 'star' || nb === 'hipo' || nb === 'high-high') return key === 'high-high';
+          if (nb === 'growth' || nb === 'med-high') return key === 'med-high';
+          if (nb === 'high performer' || nb === 'high-med') return key === 'high-med';
+          if (nb === 'core' || nb === 'med-med') return key === 'med-med';
+          if (nb === 'solid pro' || nb === 'high-low') return key === 'high-low';
+          if (nb === 'dilemma' || nb === 'low-med') return key === 'low-med';
+          if (nb === 'contributor' || nb === 'med-low') return key === 'med-low';
+          if (nb === 'underperformer' || nb === 'low-low') return key === 'low-low';
+          return true;
+        });
+      }
+
+      total = filtered.length;
+      employees = filtered.slice((page - 1) * limit, page * limit).map(e => ({
+        ...e,
+        team: { id: e.teamId, name: e.department },
+        jobCode: { standardTitle: e.jobTitle, careerLevel: e.careerLevel }
+      }));
+    }
 
     return NextResponse.json({
       success: true,
