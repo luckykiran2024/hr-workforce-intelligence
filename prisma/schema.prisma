@@ -1,0 +1,247 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model BusinessUnit {
+  id          String     @id
+  name        String
+  head        String
+  hrbp        String
+  parentBuId  String?
+  function    String
+  location    String
+  active      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  teams       Team[]
+  employees   Employee[]
+}
+
+model Team {
+  id          String       @id
+  name        String
+  parentBuId  String
+  parentBu    BusinessUnit @relation(fields: [parentBuId], references: [id])
+  teamHead    String
+  department  String
+  location    String
+  active      Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  employees   Employee[]
+}
+
+model PayBand {
+  id            String    @id
+  level         String    @unique
+  min           Float
+  midpoint      Float
+  max           Float
+  effectiveDate String
+  active        Boolean   @default(true)
+  jobCodes      JobCode[]
+}
+
+model JobFamily {
+  id       String    @id
+  name     String
+  function String
+  jobCodes JobCode[]
+}
+
+model JobCode {
+  id                String     @id
+  jobFamilyId       String
+  jobFamily         JobFamily  @relation(fields: [jobFamilyId], references: [id])
+  jobRole           String
+  standardTitle     String
+  careerLevel       String
+  careerTrack       String     @default("IC")
+  rolePurpose       String
+  accountabilities  String
+  requiredKnowledge String
+  requiredSkills    String
+  decisionScope     String
+  expectedImpact    String
+  payBandId         String?
+  payBand           PayBand?   @relation(fields: [payBandId], references: [id])
+  active            Boolean    @default(true)
+  employees         Employee[]
+}
+
+model Employee {
+  id                  String               @id
+  name                String
+  status              String               @default("ACTIVE")
+  dateOfJoining       String
+  employmentType      String               @default("Full-time")
+  location            String
+  workMode            String               @default("Hybrid")
+  corporateEmail      String?
+  businessUnitId      String
+  businessUnit        BusinessUnit         @relation(fields: [businessUnitId], references: [id])
+  teamId              String
+  team                Team                 @relation(fields: [teamId], references: [id])
+  department          String
+  jobCodeId           String?
+  jobCode             JobCode?             @relation(fields: [jobCodeId], references: [id])
+  jobTitle            String
+  careerLevel         String
+  careerTrack         String               @default("IC")
+  reportingManagerId  String?
+  coachId             String?
+  positionId          String?
+  positionCriticality String?
+  gender              String
+  age                 Int
+  tenure              Float
+  annualFixedPay      Float
+  variablePay         Float                @default(0)
+  totalTargetComp     Float
+  compaRatio          Float
+  lastIncrementPct    Float                @default(0)
+  lastRevisionDate    String?
+  orgLayer            Int                  @default(4)
+  isManager           Boolean              @default(false)
+  span                Int                  @default(0)
+  topTalent           Boolean              @default(false)
+  highPotential       Boolean              @default(false)
+  criticalRole        Boolean              @default(false)
+  successionCandidate Boolean              @default(false)
+  retentionPriority   String?
+  succession          String?
+  flightRisk          String               @default("Low")
+  currentRating       Int?
+  potential           Int?
+  pipStatus           String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  performanceRecords  PerformanceRecord[]
+  competencyAssessments EmployeeCompetency[]
+  promotionNominations  PromotionNomination[]
+  developmentPlans    DevelopmentPlan[]
+  lifecycleEvents     LifecycleEvent[]
+}
+
+model PerformanceRecord {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  cycle       String
+  preRating   Int?
+  finalRating Int?
+  potential   Int?
+  goalQ1      Float?
+  goalQ2      Float?
+  goalQ3      Float?
+  goalQ4      Float?
+  goalFY      Float?
+  reviewLate  Boolean  @default(false)
+  reviewWords Int      @default(0)
+  peerInputs  Int      @default(0)
+  appeal      Boolean  @default(false)
+  increment   Float?
+  pipStatus   String?
+  isBaseline  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model CompetencyDefinition {
+  id                  String               @id
+  name                String
+  category            String
+  jobFamily           String               @default("Data Engineering")
+  knowledgeDescL3     String
+  skillsDescL3        String
+  knowledgeDescL4     String
+  skillsDescL4        String
+  targetKnowledgeL3   String               @default("C")
+  targetSkillsL3      String               @default("C")
+  targetKnowledgeL4   String               @default("D")
+  targetSkillsL4      String               @default("D")
+  expectedEvidence    String
+  employeeAssessments EmployeeCompetency[]
+}
+
+model EmployeeCompetency {
+  id             String               @id @default(cuid())
+  employeeId     String
+  employee       Employee             @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  competencyId   String
+  competency     CompetencyDefinition @relation(fields: [competencyId], references: [id])
+  knowledgeGrade String
+  skillsGrade    String
+  evidence       String?
+  assessor       String?
+  assessedDate   String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([employeeId, competencyId])
+}
+
+model PromotionNomination {
+  id                     String   @id @default(cuid())
+  employeeId             String
+  employee               Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  fromLevel              String
+  toLevel                String
+  targetJobCode          String
+  status                 String   @default("DRAFT")
+  managerNominationNotes String?
+  evidenceNotes          String?
+  calibrationNotes       String?
+  committeeMembers       String?
+  decisionRationale      String?
+  effectiveDate          String?
+  proposedSalary         Float?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model DevelopmentPlan {
+  id               String   @id @default(cuid())
+  employeeId       String
+  employee         Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  priority         String   @default("PRIMARY") // PRIMARY or SECONDARY
+  classification   String   @default("Learning and Development") // Learning and Development, Coaching, Mentoring, Rewards, Career Growth, Role Enhancement and Role Enrichment
+  improvementArea  String?  // Where the employee has to improve
+  competencyName   String
+  currentGrade     String
+  targetGrade      String
+  action           String
+  expectedEvidence String
+  mentorOrCoach    String?
+  targetDate       String?
+  checkpoint       String?
+  status           String   @default("IN_PROGRESS") // PLANNED, IN_PROGRESS, UNDER_REVIEW, COMPLETED, ON_HOLD
+  createdAt        DateTime @default(now())
+}
+
+model LifecycleEvent {
+  id            String   @id @default(cuid())
+  employeeId    String
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  eventType     String
+  effectiveDate String
+  summary       String
+  details       String
+  createdAt     DateTime @default(now())
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  entityType    String
+  entityId      String
+  fieldName     String
+  oldValue      String?
+  newValue      String?
+  changedBy     String   @default("Demo Administrator")
+  effectiveDate String?
+  timestamp     DateTime @default(now())
+}
