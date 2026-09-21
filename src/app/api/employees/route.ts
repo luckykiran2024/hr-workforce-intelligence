@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
       console.warn('Prisma query failed, falling back to dataProvider:', e);
     }
 
-    if (total === 0 || employees.length === 0) {
+    if (total <= 1 || employees.length <= 1) {
       const { getAllEmployees } = await import('@/lib/dataProvider');
       const all = await getAllEmployees();
       let filtered = all;

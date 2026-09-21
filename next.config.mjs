@@ -4,9 +4,11 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  swcMinify: false,
   typescript: {
     ignoreBuildErrors: true,
+  },
+  experimental: {
+    cpus: 1,
   },
 };
 
